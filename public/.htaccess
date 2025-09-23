@@ -1,0 +1,18 @@
+# Place this in /adenneal/plantjoy/.htaccess
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Set the base path for the rewrite rules
+  RewriteBase /plantjoy/
+
+  # Do not rewrite requests for the api directory
+  RewriteRule ^api/ - [L]
+
+  # Do not rewrite requests for existing files or directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # For all other requests, rewrite to the index.html of the React app
+  RewriteRule . /plantjoy/index.html [L]
+</IfModule>

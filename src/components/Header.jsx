@@ -1,3 +1,4 @@
+// src/components/Header.jsx
 import React, { useState } from 'react';
 
 // You can create a separate Icon file or keep them here
@@ -7,9 +8,9 @@ const ShoppingCartIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="2
 const LeafIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-green-600"><path d="M17.61,3.43a1,1,0,0,0-1.1,0,7,7,0,0,0-3,5.78,7.29,7.29,0,0,0,1.8,5.1,1,1,0,0,0,.7.31,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.42,5.33,5.33,0,0,1-1.29-3.71,5,5,0,0,1,2.12-4.13A1,1,0,0,0,17.61,3.43Z"/><path d="M11.09,12.19a1,1,0,0,0-1.42,0,5.17,5.17,0,0,1-3.4,1.5,5.26,5.26,0,0,1-4-2,1,1,0,0,0-1.42,1.42,7.25,7.25,0,0,0,5.46,2.78,7.06,7.06,0,0,0,5.1-1.8A1,1,0,0,0,11.09,12.19Z"/></svg>);
 
 
-const Header = ({ onNavClick, cartCount, onCartClick }) => {
+const Header = ({ onNavClick, cartCount, onCartClick, isLoggedIn, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const navLinks = ["Menu", "How It Works", "Our Story", "Catering", "Contact"];
+  const navLinks = ["Menu", "How It Works", "Our Story", "Catering", "Contact", "Classes", "Reheat", "Meal Prep", "Deli Info", "Supper Club"];
 
   const handleNav = (page) => {
       onNavClick(page);
@@ -41,6 +42,11 @@ const Header = ({ onNavClick, cartCount, onCartClick }) => {
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{cartCount}</span>
                 )}
               </button>
+              {isLoggedIn ? (
+                <button onClick={onLogout} className="text-gray-600 hover:text-green-600">Logout</button>
+              ) : (
+                <button onClick={() => handleNav('Login')} className="text-gray-600 hover:text-green-600">Login</button>
+              )}
               <div className="md:hidden">
                 <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600 hover:text-green-600 focus:outline-none">
                     {isOpen ? <CloseIcon /> : <MenuIcon />}
