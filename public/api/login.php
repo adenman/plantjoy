@@ -1,0 +1,49 @@
+<?php
+// /api/login.php
+require_once 'db.php';
+
+session_start();
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    header('Content-Type: application/json');
+    $data = json_decode(file_get_contents('php://input'));
+    
+    $email = $data->email;
+    $password = $data->password;
+
+    // We now select the is_admin column as well
+    $stmt = $conn->prepare("SELECT id, name, email, password, is_admin, stripe_customer_id FROM Pusers WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($user = $result->fetch_assoc()) {
+        if (password_verify($password, $user['password'])) {
+            // Password is correct, store user data in session
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['stripe_customer_id'] = $user['stripe_customer_id'];
+            $_SESSION['is_admin'] = (int)$user['is_admin']; // Store admin status
+            
+            echo json_encode([
+                'success' => true,
+                'user' => [
+                    'id' => $user['id'],
+                    'name' => $user['name'],
+                    'email' => $user['email'],
+                    'is_admin' => (int)$user['is_admin'] // Send admin status to frontend
+                ]
+            ]);
+        } else {
+            http_response_code(401);
+            echo json_encode(['error' => 'Invalid email or password.']);
+        }
+    } else {
+        http_response_code(401);
+        echo json_encode(['error' => 'Invalid email or password.']);
+    }
+    $stmt->close();
+    $conn->close();
+}
+?>
