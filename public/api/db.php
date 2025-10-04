@@ -12,9 +12,9 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // --- IMPORTANT: VERIFY THESE DETAILS IN YOUR BLUEHOST CPANEL ---
 $servername = "localhost";
-$username   = "ocbenjic_aden"; // This was in your error log.
-$password   = "Xyzp9036!";    // Double-check the password for this specific user.
-$dbname     = "ocbenjic_Aden";    // This was in your error log. Make sure this is the correct database.
+$username   = "ocbenjic_YHTSAPP"; // This was in your error log.
+$password   = "god578aden";    // Double-check the password for this specific user.
+$dbname     = "ocbenjic_YHTS_App";    // This was in your error log. Make sure this is the correct database.
 
 // Use a try-catch block for better error handling
 try {
