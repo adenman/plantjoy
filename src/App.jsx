@@ -12,7 +12,7 @@ import GoalTracker from './pages/GoalTracker';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+
 
 
 // Component to protect routes that require a user to be logged in.
@@ -67,7 +67,7 @@ function App() {
           />
           
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+          
         </Routes>
       </main>
       <Footer />

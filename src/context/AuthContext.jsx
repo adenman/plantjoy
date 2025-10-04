@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/plantjoy/api/check_session.php')
+        fetch('/BoothPortal/api/check_session.php')
             .then(res => res.json())
             .then(data => {
                 if (data.isLoggedIn) {
@@ -23,11 +23,15 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        fetch('/plantjoy/api/logout.php').then(() => setUser(null));
+        fetch('/BoothPortal/api/logout.php').then(() => {
+            setUser(null);
+            // Optionally redirect to home or login page after logout
+            window.location.href = '/BoothPortal/login';
+        });
     };
     
-    // Check if the user object includes is_admin: 1
-    const isAdmin = user && user.is_admin === 1;
+    // Check if the user's role is 'admin'
+    const isAdmin = user && user.role === 'admin';
 
     return (
         <AuthContext.Provider value={{ user, login, logout, isLoading, isAdmin }}>

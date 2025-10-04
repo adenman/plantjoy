@@ -8,7 +8,7 @@ import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/plantjoy">
+    <BrowserRouter basename="/BoothPortal">
       <AuthProvider>
         <App />
       </AuthProvider>

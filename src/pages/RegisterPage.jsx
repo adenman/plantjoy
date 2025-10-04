@@ -15,20 +15,22 @@ const RegisterPage = () => {
         setError('');
         setSuccess('');
         try {
-            const response = await fetch('/plantjoy/api/register.php', {
+            // Note: The 'name' state from React is sent as 'name' in the JSON, 
+            // but the PHP script correctly interprets it as 'username' for the database.
+            const response = await fetch('/BoothPortal/api/register.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, email, password })
             });
             const data = await response.json();
-            if (data.success) {
+            if (response.ok && data.success) {
                 setSuccess('Registration successful! Redirecting to login...');
                 setTimeout(() => navigate('/login'), 2000);
             } else {
-                setError(data.error);
+                throw new Error(data.error || 'Registration failed.');
             }
         } catch (err) {
-            setError('An error occurred. Please try again.');
+            setError(err.message);
         }
     };
 
@@ -38,7 +40,7 @@ const RegisterPage = () => {
                 <h2 className="text-3xl font-bold text-center text-brand-gray mb-8">Register</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block font-semibold">Name</label>
+                        <label className="block font-semibold">Username</label>
                         <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full border rounded p-2" />
                     </div>
                     <div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '../assets/logo.webp'; // Assuming logo is in assets
+import logo from '../assets/logo.png'; // Assuming logo is in assets
 
 const Home = ({ onNavClick }) => {
     return (

@@ -10,17 +10,17 @@ const ProfileDetails = () => {
 
     useEffect(() => {
         if (user) {
-            setName(user.name);
+            setName(user.name); // 'name' in the context is the username
             setEmail(user.email);
         }
     }, [user]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const response = await fetch('/plantjoy/api/profile.php', {
+        const response = await fetch('/BoothPortal/api/profile.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email })
+            body: JSON.stringify({ name, email }) // 'name' here is the username
         });
         const data = await response.json();
         if (data.success) {
@@ -36,7 +36,7 @@ const ProfileDetails = () => {
             <h2 className="text-2xl font-bold text-brand-gray border-b pb-2 mb-4">Account Details</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block font-semibold">Name</label>
+                    <label className="block font-semibold">Username</label>
                     <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full border rounded p-2" />
                 </div>
                 <div>

@@ -11,8 +11,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $data->email;
     $password = $data->password;
 
-    // We now select the is_admin column as well
-    $stmt = $conn->prepare("SELECT id, name, email, password, is_admin, stripe_customer_id FROM Pusers WHERE email = ?");
+    // Select from the Admin_Users table
+    $stmt = $conn->prepare("SELECT id, username, email, password, role FROM Admin_Users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -21,18 +21,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (password_verify($password, $user['password'])) {
             // Password is correct, store user data in session
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_name'] = $user['username']; // Use 'username' column
             $_SESSION['user_email'] = $user['email'];
-            $_SESSION['stripe_customer_id'] = $user['stripe_customer_id'];
-            $_SESSION['is_admin'] = (int)$user['is_admin']; // Store admin status
+            $_SESSION['user_role'] = $user['role']; // Store role in session
             
             echo json_encode([
                 'success' => true,
                 'user' => [
                     'id' => $user['id'],
-                    'name' => $user['name'],
+                    'name' => $user['username'], // Send username as 'name' for frontend consistency
                     'email' => $user['email'],
-                    'is_admin' => (int)$user['is_admin'] // Send admin status to frontend
+                    'role' => $user['role'] // Send role to frontend
                 ]
             ]);
         } else {

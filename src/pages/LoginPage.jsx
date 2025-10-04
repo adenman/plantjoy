@@ -14,7 +14,7 @@ const LoginPage = () => {
         e.preventDefault();
         setError('');
         try {
-            const response = await fetch('/plantjoy/api/login.php', {
+            const response = await fetch('/BoothPortal/api/login.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -22,7 +22,7 @@ const LoginPage = () => {
             const data = await response.json();
             if (data.success) {
                 login(data.user);
-                navigate('/menu'); // Redirect to menu page after login
+                navigate('/bookings'); // Redirect to bookings page after login
             } else {
                 setError(data.error);
             }

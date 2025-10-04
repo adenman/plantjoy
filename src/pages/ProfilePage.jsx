@@ -1,8 +1,5 @@
 import React from 'react';
-import ProfileDetails from '../components/ProfileDetails';
-import UpdatePassword from '../components/UpdatePassword';
-import SavedAddresses from '../components/SavedAddresses';
-import OrderHistory from '../components/OrderHistory'; // 1. Import the new component
+ // 1. Import the new component
 
 const ProfilePage = () => {
     return (

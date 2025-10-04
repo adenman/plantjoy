@@ -5,5 +5,5 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   // Add this 'base' property to specify the subdirectory
   plugins: [react()],
-  base: '/plantjoy/'
+  base: '/BoothPortal/'
 })
