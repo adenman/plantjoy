@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 
-const eventTypes = ["Wedding", "Corporate", "Birthday Party", "Private Event", "Other"];
+const eventTypes = ["Wedding", "Corporate", "Birthday Party", "Private Event", "Other", "Converted Lead"];
 const packageTypes = ["Standard", "Premium", "Deluxe", "Custom"];
 const statusTypes = ["Lead", "Quote Sent", "Confirmed", "Completed", "Cancelled"];
 
 const statusColors = {
-    'Confirmed': '#28a745', // green
-    'Completed': '#17a2b8', // cyan
-    'Lead': '#ffc107',      // yellow
-    'Quote Sent': '#fd7e14',// orange
-    'Cancelled': '#dc3545'  // red
+    'Confirmed': '#28a745',
+    'Completed': '#17a2b8',
+    'Lead': '#ffc107',
+    'Quote Sent': '#fd7e14',
+    'Cancelled': '#dc3545'
 };
 
 const Bookings = () => {
@@ -27,6 +28,20 @@ const Bookings = () => {
         package: packageTypes[0], start_time: '', end_time: '',
         event_type: eventTypes[0], notes: ''
     });
+
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (location.state?.prefillData) {
+            setNewEvent(prev => ({
+                ...prev,
+                ...location.state.prefillData
+            }));
+            setActiveTab('manager');
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location, navigate]);
 
     const formatDate = (dateString) => {
         if (!dateString) return { date: 'N/A', time: '' };
@@ -80,7 +95,7 @@ const Bookings = () => {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert('Event added successfully!');
+                alert('Booking added successfully!');
                 setNewEvent({ client_name: '', client_email: '', client_phone: '', package: packageTypes[0], start_time: '', end_time: '', event_type: eventTypes[0], notes: '' });
                 fetchBookings();
                 setActiveTab('list');
@@ -103,7 +118,7 @@ const Bookings = () => {
             if (data.success) {
                 alert('Booking updated successfully!');
                 setIsEditModalOpen(false);
-                fetchBookings(); // Refresh the list
+                fetchBookings();
             } else {
                 throw new Error(data.error || 'Failed to update booking.');
             }
@@ -117,7 +132,7 @@ const Bookings = () => {
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        fetchBookings(); // Refresh list
+                        fetchBookings();
                     } else {
                         throw new Error(data.error);
                     }
@@ -191,7 +206,7 @@ const Bookings = () => {
             title: `${b.event_type} - ${b.client_name}`,
             start: b.start_time,
             end: b.end_time,
-            backgroundColor: statusColors[b.status] || '#777', // Default to gray
+            backgroundColor: statusColors[b.status] || '#777',
             borderColor: statusColors[b.status] || '#777'
         }));
 
@@ -272,7 +287,6 @@ const Bookings = () => {
                 </div>
             </div>
 
-            {/* --- Edit Modal --- */}
             {isEditModalOpen && editingBooking && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-xl">
