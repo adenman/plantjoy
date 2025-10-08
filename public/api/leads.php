@@ -1,29 +1,33 @@
 <?php
 // /api/leads.php
+
 require_once 'db.php';
 header('Content-Type: application/json');
 session_start();
 
 if (!isset($_SESSION['user_id'])) { 
     http_response_code(403);
-    echo json_encode(['error' => 'You must be logged in.']);
+    echo json_encode(['error' => 'You must be logged in to manage leads.']);
     exit;
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
+$data = json_decode(file_get_contents('php://input'));
+
+if ($method == 'POST' && $action == 'convert') {
+    handleLeadConversion($conn);
+    exit;
+}
+
+if ($method == 'POST' && $action == 'bulk-import') {
+    handleBulkImport($conn);
+    exit;
+}
 
 switch ($method) {
     case 'GET':
-        $stmt = $conn->prepare("
-            SELECT 
-                l.*, 
-                (SELECT COUNT(b.id) FROM Admin_Bookings b WHERE b.client_email = l.email) as booking_count
-            FROM 
-                Admin_Leads l 
-            ORDER BY 
-                l.created_at DESC
-        ");
+        $stmt = $conn->prepare("SELECT id, name, email, phone, status, event_date, contact_date, follow_up_date, source, notes FROM Admin_Leads ORDER BY contact_date DESC");
         $stmt->execute();
         $result = $stmt->get_result();
         $leads = $result->fetch_all(MYSQLI_ASSOC);
@@ -32,99 +36,36 @@ switch ($method) {
         break;
 
     case 'POST':
-        $data = json_decode(file_get_contents('php://input'));
-
-        if ($action === 'convert') {
-            $bookingData = $data->booking;
-            $leadData = $data->lead;
-            $leadId = $leadData->id;
-
-            if (empty($leadId) || empty($bookingData->start_time) || empty($bookingData->end_time)) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Missing data for conversion.']);
-                exit;
-            }
-
-            // 1. Insert into Admin_Clients
-            $clientStmt = $conn->prepare("INSERT INTO Admin_Clients (name, email, phone, source, contact_date) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone)");
-            $clientStmt->bind_param("sssss", $leadData->name, $leadData->email, $leadData->phone, $leadData->source, $leadData->contact_date);
-            
-            if ($clientStmt->execute()) {
-                $clientStmt->close();
-
-                // 2. Insert into Admin_Bookings
-                $bookingStmt = $conn->prepare("INSERT INTO Admin_Bookings (client_name, client_email, client_phone, start_time, end_time, event_type, package, notes, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-                $status = 'Confirmed';
-                $bookingStmt->bind_param("sssssssss", $leadData->name, $leadData->email, $leadData->phone, $bookingData->start_time, $bookingData->end_time, $bookingData->event_type, $bookingData->package, $bookingData->notes, $status);
-
-                if ($bookingStmt->execute()) {
-                    $bookingId = $conn->insert_id;
-                    $bookingStmt->close();
-
-                    // 3. Delete the original lead
-                    $deleteStmt = $conn->prepare("DELETE FROM Admin_Leads WHERE id = ?");
-                    $deleteStmt->bind_param("i", $leadId);
-                    $deleteStmt->execute();
-                    $deleteStmt->close();
-
-                    echo json_encode(['success' => true, 'bookingId' => $bookingId]);
-                } else {
-                    http_response_code(500);
-                    echo json_encode(['error' => 'Failed to create booking: ' . $bookingStmt->error]);
-                }
-            } else {
-                http_response_code(500);
-                echo json_encode(['error' => 'Failed to create client from lead: ' . $clientStmt->error]);
-            }
-        } 
-        else {
-            if (empty($data->name) || empty($data->email)) {
-                http_response_code(400);
-                echo json_encode(['error' => 'Name and Email are required for a new lead.']);
-                exit;
-            }
-            $stmt = $conn->prepare("INSERT INTO Admin_Leads (name, email, phone, event_date, source, contact_date, status, follow_up_date, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-            if (!$stmt) {
-                 http_response_code(500);
-                 echo json_encode(['error' => 'SQL Prepare failed: ' . $conn->error]);
-                 exit;
-            }
-            $status = $data->status ?? 'New';
-            $source = $data->source ?? 'Manual Entry';
-            $stmt->bind_param("sssssssss", $data->name, $data->email, $data->phone, $data->event_date, $source, $data->contact_date, $status, $data->follow_up_date, $data->notes);
-            if ($stmt->execute()) {
-                echo json_encode(['success' => true, 'id' => $conn->insert_id]);
-            } else {
-                http_response_code(500);
-                echo json_encode(['error' => 'Failed to add lead: ' . $stmt->error]);
-            }
-            $stmt->close();
+        if (empty($data->name) || empty($data->email)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Name and Email are required.']);
+            exit;
         }
+        $stmt = $conn->prepare("INSERT INTO Admin_Leads (name, email, phone, status, event_date, contact_date, follow_up_date, source, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $status = $data->status ?? 'New';
+        $stmt->bind_param("sssssssss", $data->name, $data->email, $data->phone, $status, $data->event_date, $data->contact_date, $data->follow_up_date, $data->source, $data->notes);
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true, 'id' => $conn->insert_id]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to add lead: ' . $stmt->error]);
+        }
+        $stmt->close();
         break;
 
     case 'PUT':
-        $data = json_decode(file_get_contents('php://input'));
-        if (empty($data->id)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Lead ID is required for an update.']);
-            exit;
-        }
-        $stmt = $conn->prepare("UPDATE Admin_Leads SET name=?, email=?, phone=?, event_date=?, source=?, contact_date=?, status=?, follow_up_date=?, notes=? WHERE id=?");
-        if (!$stmt) {
-             http_response_code(500);
-             echo json_encode(['error' => 'SQL Prepare failed: ' . $conn->error]);
-             exit;
-        }
-        $stmt->bind_param("sssssssssi", $data->name, $data->email, $data->phone, $data->event_date, $data->source, $data->contact_date, $data->status, $data->follow_up_date, $data->notes, $data->id);
+        if (empty($data->id)) { http_response_code(400); echo json_encode(['error' => 'Lead ID is required for updates.']); exit; }
+        $stmt = $conn->prepare("UPDATE Admin_Leads SET name=?, email=?, phone=?, status=?, event_date=?, contact_date=?, follow_up_date=?, source=?, notes=? WHERE id=?");
+        $stmt->bind_param("sssssssssi", $data->name, $data->email, $data->phone, $data->status, $data->event_date, $data->contact_date, $data->follow_up_date, $data->source, $data->notes, $data->id);
         if ($stmt->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Lead updated successfully.']);
+            echo json_encode(['success' => true]);
         } else {
             http_response_code(500);
             echo json_encode(['error' => 'Failed to update lead: ' . $stmt->error]);
         }
         $stmt->close();
         break;
-    
+
     case 'DELETE':
         $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
         if (!$id) {
@@ -150,4 +91,97 @@ switch ($method) {
 }
 
 $conn->close();
+
+function handleLeadConversion($conn) {
+    $data = json_decode(file_get_contents('php://input'));
+    $lead = $data->lead;
+    $booking = $data->booking;
+    if (empty($lead) || empty($booking)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid lead or booking data provided.']);
+        return;
+    }
+    $conn->begin_transaction();
+    try {
+        $client_id = null;
+        $stmt = $conn->prepare("SELECT id FROM Admin_Clients WHERE email = ?");
+        $stmt->bind_param("s", $lead->email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result->num_rows > 0) {
+            $client_id = $result->fetch_assoc()['id'];
+        } else {
+            $stmt = $conn->prepare("INSERT INTO Admin_Clients (name, email, phone, source, contact_date) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssss", $lead->name, $lead->email, $lead->phone, $lead->source, $lead->contact_date);
+            $stmt->execute();
+            $client_id = $conn->insert_id;
+        }
+        $stmt->close();
+        $stmt = $conn->prepare(
+            "INSERT INTO Admin_Bookings (client_name, client_email, client_phone, package, status, start_time, end_time, event_type, notes, event_code, created_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+        );
+        $booking_status = 'Confirmed';
+        $event_code = $booking->event_code ?? null;
+        $stmt->bind_param("ssssssssss", $lead->name, $lead->email, $lead->phone, $booking->package, $booking_status, $booking->start_time, $booking->end_time, $booking->event_type, $booking->notes, $event_code);
+        $stmt->execute();
+        $booking_id = $conn->insert_id;
+        $stmt->close();
+        $stmt = $conn->prepare("DELETE FROM Admin_Leads WHERE id = ?");
+        $stmt->bind_param("i", $lead->id);
+        $stmt->execute();
+        $stmt->close();
+        $conn->commit();
+        echo json_encode(['success' => true, 'message' => 'Lead converted successfully.', 'bookingId' => $booking_id]);
+    } catch (Exception $e) {
+        $conn->rollback();
+        http_response_code(500);
+        echo json_encode(['error' => 'Conversion failed: ' . $e->getMessage()]);
+    }
+}
+
+// --- UPDATED FUNCTION for Bulk Import ---
+function handleBulkImport($conn) {
+    $data = json_decode(file_get_contents('php://input'));
+
+    if (empty($data) || !is_array($data)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid or empty lead data provided.']);
+        return;
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        // Updated INSERT statement to include event_date
+        $stmt = $conn->prepare("INSERT INTO Admin_Leads (name, email, phone, source, status, event_date) VALUES (?, ?, ?, ?, ?, ?)");
+        
+        $imported_count = 0;
+        foreach ($data as $lead) {
+            if (!empty($lead->name) && !empty($lead->email)) {
+                $name = $lead->name;
+                $email = $lead->email;
+                $phone = $lead->phone ?? null;
+                $source = $lead->source ?? 'File Import';
+                $status = 'New';
+                $event_date = $lead->event_date ?? null; // Get event_date
+                
+                // Updated bind_param to include event_date
+                $stmt->bind_param("ssssss", $name, $email, $phone, $source, $status, $event_date);
+                $stmt->execute();
+                $imported_count++;
+            }
+        }
+        
+        $stmt->close();
+        $conn->commit();
+        echo json_encode(['success' => true, 'message' => "Successfully imported {$imported_count} leads into the database."]);
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        http_response_code(500);
+        echo json_encode(['error' => 'Bulk import failed: ' . $e->getMessage()]);
+    }
+}
+
 ?>

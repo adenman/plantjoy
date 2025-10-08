@@ -5,20 +5,15 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// These headers MUST be sent before any other output
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: *");
-header("Content-Type: application/json; charset=UTF-8");
 
-// --- IMPORTANT: VERIFY THESE DETAILS IN YOUR BLUEHOST CPANEL ---
 $servername = "localhost";
-$username   = "ocbenjic_YHTSAPP"; // This was in your error log.
-$password   = "god578aden";    // Double-check the password for this specific user.
-$dbname     = "ocbenjic_YHTS_App";    // This was in your error log. Make sure this is the correct database.
+$username   = "ocbenjic_YHTSAPP";
+$password   = "god578aden";
+$dbname     = "ocbenjic_YHTS_App";
 
-// Use a try-catch block for better error handling
 try {
-    // Turn off error reporting temporarily to handle connection errors manually
     mysqli_report(MYSQLI_REPORT_OFF);
 
     $conn = new mysqli($servername, $username, $password, $dbname);
@@ -26,10 +21,14 @@ try {
     if ($conn->connect_error) {
         throw new Exception("Database connection failed: " . $conn->connect_error);
     }
+    
+    $conn->set_charset("utf8mb4");
+
 } catch (Exception $e) {
-    // If connection fails, send a JSON error response and stop the script
-    http_response_code(500); // Internal Server Error
+    http_response_code(500);
+    header("Content-Type: application/json; charset=UTF-8");
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-    exit(); // Stop the script immediately
+    exit();
 }
+
 ?>

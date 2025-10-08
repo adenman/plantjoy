@@ -1,15 +1,13 @@
-/* src/index.css */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply font-sans text-brand-gray; /* Use Montserrat and brand gray as default */
+    @apply font-sans bg-page-gray text-brand-gray;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif; /* Use Lora for all headings */
+    @apply font-serif;
   }
 }

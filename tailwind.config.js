@@ -9,8 +9,9 @@ export default {
       colors: {
         'brand-pink': '#E7758B',
         'brand-green': '#85B867',
-        'brand-blue': '#67A9B8', // New color for frozen items
+        'brand-blue': '#67A9B8',
         'brand-gray': '#4A4A4A',
+        'page-gray': '#f0f2f5',
       },
       fontFamily: {
         'sans': ['Montserrat', 'sans-serif'],
