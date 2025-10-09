@@ -14,6 +14,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 
 
+
 // Component to protect routes that require a user to be logged in.
 const PrivateRoute = ({ children }) => {
     const { user, isLoading } = useAuth();
@@ -47,11 +48,12 @@ function App() {
       />
       <main>
         <Routes>
-          <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-          <Route path="/bookings" element={<PrivateRoute><Bookings /></PrivateRoute>} />
-          <Route path="/sales-leads" element={<PrivateRoute><SalesLeads /></PrivateRoute>} />
-          <Route path="/budget-tracker" element={<PrivateRoute><BudgetTracker /></PrivateRoute>} />
-          <Route path="/goal-tracker" element={<PrivateRoute><GoalTracker /></PrivateRoute>} />
+          <Route path="/" element={<Home onNavClick={handleNavClick} />} />
+          <Route path="/bookings" element={<Bookings />} />
+          <Route path="/sales-leads" element={<SalesLeads />} />
+          <Route path="/budget-tracker" element={<BudgetTracker />} />
+          <Route path="/task-board" element={<TaskBoard />} />
+          <Route path="/goal-tracker" element={<GoalTracker />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
@@ -63,6 +65,8 @@ function App() {
               </PrivateRoute>
             } 
           />
+          
+          {/* Admin Routes */}
           
         </Routes>
       </main>
