@@ -9,8 +9,8 @@ const CloseIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" className="h-6 
 
 const Header = ({ onNavClick }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, logout, isAdmin } = useAuth();
-  const navLinks = ["Bookings", "Sales Leads", "Task Board", "Budget Tracker", "Goal Tracker"];
+  const { user, logout, isAdmin } = useAuth(); // Get user state and admin status from AuthContext
+  const navLinks = ["Bookings", "Sales Leads", "Budget Tracker", "Task Board", "Goal Tracker"];
 
   const handleNav = (page) => {
     onNavClick(page);
@@ -23,7 +23,7 @@ const Header = ({ onNavClick }) => {
   }
 
   return (
-    <header className="bg-brand-gray shadow-md sticky top-0 z-40">
+    <header className="bg-gray shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex-shrink-0">
@@ -31,29 +31,31 @@ const Header = ({ onNavClick }) => {
           </Link>
           <nav className="hidden lg:flex items-center space-x-6">
             {navLinks.map(link => (
-              <a key={link} href="#" onClick={() => handleNav(link)} className="text-white hover:text-brand-pink transition-colors duration-300 font-medium">
+              <a key={link} href="#" onClick={() => handleNav(link)} className="text-brand-gray hover:text-brand-pink transition-colors duration-300 font-medium">
                 {link}
               </a>
             ))}
+            {/* Show Admin link only if user is an admin */}
             {isAdmin && (
                 <Link to="/admin" className="font-bold text-brand-pink hover:underline">Admin</Link>
             )}
           </nav>
           <div className="flex items-center space-x-4">
             
+            {/* Conditional rendering for Login/Profile/Logout */}
             <div className="hidden lg:flex items-center space-x-4">
               {user ? (
                   <>
-                      <Link to="/profile" className="text-sm font-medium text-white hover:text-brand-pink">My Account</Link>
-                      <button onClick={logout} className="text-white hover:text-brand-pink font-medium text-sm">Logout</button>
+                      <Link to="/profile" className="text-sm font-medium text-brand-gray hover:text-brand-pink">My Account</Link>
+                      <button onClick={logout} className="text-brand-gray hover:text-brand-pink font-medium text-sm">Logout</button>
                   </>
               ) : (
-                  <Link to="/login" className="text-white hover:text-brand-pink font-medium">Login</Link>
+                  <Link to="/login" className="text-brand-gray hover:text-brand-pink font-medium">Login</Link>
               )}
             </div>
 
             <div className="lg:hidden">
-              <button onClick={() => setIsOpen(!isOpen)} className="text-white hover:text-brand-pink focus:outline-none">
+              <button onClick={() => setIsOpen(!isOpen)} className="text-brand-gray hover:text-brand-pink focus:outline-none">
                   {isOpen ? <CloseIcon /> : <MenuIcon />}
               </button>
             </div>
@@ -63,24 +65,25 @@ const Header = ({ onNavClick }) => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="lg:hidden bg-brand-gray border-t border-gray-700">
+        <div className="lg:hidden bg-gray border-t">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {navLinks.map(link => (
-              <a key={link} href="#" onClick={() => handleNav(link)} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:text-brand-pink hover:bg-gray-700">
+              <a key={link} href="#" onClick={() => handleNav(link)} className="block px-3 py-2 rounded-md text-base font-medium text-brand-gray hover:text-brand-pink hover:bg-gray-50">
                 {link}
               </a>
             ))}
+            {/* Admin link for mobile */}
             {isAdmin && (
-                <Link to="/admin" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-bold text-brand-pink hover:bg-gray-700">Admin Dashboard</Link>
+                <Link to="/admin" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-bold text-brand-pink hover:bg-gray-50">Admin Dashboard</Link>
             )}
-            <div className="border-t border-gray-600 pt-4 px-3">
+            <div className="border-t pt-4 px-3">
               {user ? (
                   <div className="space-y-2">
-                      <Link to="/profile" onClick={() => setIsOpen(false)} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:text-brand-pink hover:bg-gray-700">My Account</Link>
-                      <a href="#" onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:text-brand-pink hover:bg-gray-700">Logout</a>
+                      <Link to="/profile" onClick={() => setIsOpen(false)} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-brand-gray hover:text-brand-pink hover:bg-gray-50">My Account</Link>
+                      <a href="#" onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-brand-gray hover:text-brand-pink hover:bg-gray-50">Logout</a>
                   </div>
               ) : (
-                  <Link to="/login" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-white hover:text-brand-pink hover:bg-gray-700">Login / Register</Link>
+                  <Link to="/login" onClick={() => setIsOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-brand-gray hover:text-brand-pink hover:bg-gray-50">Login / Register</Link>
               )}
             </div>
           </div>

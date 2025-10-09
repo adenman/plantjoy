@@ -16,8 +16,7 @@ $data = json_decode(file_get_contents('php://input'));
 
 switch ($method) {
     case 'GET':
-        // NOTE: We've added event_code to the SELECT statement
-        $stmt = $conn->prepare("SELECT id, client_name, client_email, client_phone, package, status, start_time, end_time, event_type, notes, event_code, created_at FROM Admin_Bookings ORDER BY start_time ASC");
+        $stmt = $conn->prepare("SELECT id, client_name, client_email, client_phone, package, status, start_time, end_time, event_type, notes, created_at FROM Admin_Bookings ORDER BY start_time ASC");
         $stmt->execute();
         $result = $stmt->get_result();
         $bookingsData = $result->fetch_all(MYSQLI_ASSOC);
@@ -33,16 +32,15 @@ switch ($method) {
         break;
 
     case 'POST':
-        // --- CHANGE IS HERE: Added logic to handle the new event_code field ---
+        // Logic for adding a new booking
         if (empty($data->event_type) || empty($data->start_time) || empty($data->end_time) || empty($data->client_name)) {
             http_response_code(400);
             echo json_encode(['error' => 'Event Type, Start Time, End Time, and Client Name are required.']);
             exit;
         }
-        $stmt = $conn->prepare("INSERT INTO Admin_Bookings (client_name, client_email, client_phone, package, status, start_time, end_time, event_type, notes, event_code, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+        $stmt = $conn->prepare("INSERT INTO Admin_Bookings (client_name, client_email, client_phone, package, status, start_time, end_time, event_type, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
         $status = $data->status ?? 'Confirmed';
-        $event_code = $data->event_code ?? null; // Handle optional event code
-        $stmt->bind_param("ssssssssss", $data->client_name, $data->client_email, $data->client_phone, $data->package, $status, $data->start_time, $data->end_time, $data->event_type, $data->notes, $event_code);
+        $stmt->bind_param("sssssssss", $data->client_name, $data->client_email, $data->client_phone, $data->package, $status, $data->start_time, $data->end_time, $data->event_type, $data->notes);
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'id' => $conn->insert_id]);
         } else {
@@ -53,10 +51,10 @@ switch ($method) {
         break;
 
     case 'PUT':
-        // --- CHANGE IS HERE: Added event_code to the update logic ---
-        if (empty($data->id)) { http_response_code(400); echo json_encode(['error' => 'Booking ID is required for updates.']); exit; }
-        $stmt = $conn->prepare("UPDATE Admin_Bookings SET client_name=?, client_email=?, client_phone=?, package=?, status=?, start_time=?, end_time=?, event_type=?, notes=?, event_code=? WHERE id=?");
-        $stmt->bind_param("ssssssssssi", $data->client_name, $data->client_email, $data->client_phone, $data->package, $data->status, $data->start_time, $data->end_time, $data->event_type, $data->notes, $data->event_code, $data->id);
+        // Logic for updating a booking
+        if (empty($data->id)) { /* ... */ }
+        $stmt = $conn->prepare("UPDATE Admin_Bookings SET client_name=?, client_email=?, client_phone=?, package=?, status=?, start_time=?, end_time=?, event_type=?, notes=? WHERE id=?");
+        $stmt->bind_param("sssssssssi", $data->client_name, $data->client_email, $data->client_phone, $data->package, $data->status, $data->start_time, $data->end_time, $data->event_type, $data->notes, $data->id);
         if ($stmt->execute()) {
             echo json_encode(['success' => true]);
         } else {
@@ -67,6 +65,7 @@ switch ($method) {
         break;
 
     case 'DELETE':
+        // --- NEW: Logic for deleting a booking ---
         $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
         if (!$id) {
             http_response_code(400);

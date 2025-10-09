@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const formatDate = (dateString) => {
@@ -6,29 +6,6 @@ const formatDate = (dateString) => {
     const date = new Date(dateString);
     return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-US');
 };
-
-// Helper function to generate email content based on a template
-const getEmailContent = (template, name) => {
-    switch (template) {
-        case 'Follow-up':
-            return {
-                subject: `Following up from The Booth MKE`,
-                body: `Hi ${name},\n\nJust wanted to follow up on your recent inquiry. Please let us know if you have any questions about our photobooth packages.\n\nBest,\nThe Booth MKE Team`
-            };
-        case 'Package Details':
-            return {
-                subject: `Photo Booth Package Details from The Booth MKE`,
-                body: `Hi ${name},\n\nThanks again for your interest! Here are some more details about our packages...\n\n[Add package details here]\n\nBest,\nThe Booth MKE Team`
-            };
-        case 'Initial Inquiry':
-        default:
-            return {
-                subject: `Thank you for your inquiry with The Booth MKE!`,
-                body: `Hi ${name},\n\nThank you for reaching out to us. We've received your inquiry and will get back to you with package details shortly.\n\nWe'd love to be a part of your event!\n\nBest,\nThe Booth MKE Team`
-            };
-    }
-};
-
 
 const AnalyticsCard = ({ title, value, icon }) => (
     <div className="bg-white p-6 rounded-lg shadow-lg flex items-center">
@@ -54,7 +31,7 @@ const SalesLeads = () => {
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-    const [emailContent, setEmailContent] = useState({ template: 'Initial Inquiry', subject: '', body: '' });
+    const [emailContent, setEmailContent] = useState({ template: 'Initial Inquiry' });
     const [analytics, setAnalytics] = useState({ totalActiveLeads: 0, newLeadsThisMonth: 0, conversionRate: 0 });
     const navigate = useNavigate();
 
@@ -75,41 +52,7 @@ const SalesLeads = () => {
         .finally(() => setIsLoading(false));
     }, []);
 
-    useEffect(() => { fetchAllData(); }, [fetchAllData]);
-
-    // Effect to update email content when modal opens or selected item changes
-    useEffect(() => {
-        if (selectedItem) {
-            const content = getEmailContent(emailContent.template, selectedItem.name);
-            setEmailContent(prev => ({ ...prev, ...content }));
-        }
-    }, [selectedItem, emailContent.template]);
-
-
-    const handleSaveLead = (savedLead) => {
-        setLeads(prevLeads => {
-            const exists = prevLeads.find(l => l.id === savedLead.id);
-            if (exists) {
-                return prevLeads.map(l => l.id === savedLead.id ? savedLead : l);
-            } else {
-                return [savedLead, ...prevLeads];
-            }
-        });
-        // Also refetch analytics to keep cards updated
-        fetch('/BoothPortal/api/analytics.php').then(res => res.json()).then(setAnalytics);
-    };
-
-    const handleSaveClient = (savedClient) => {
-        setClients(prevClients => {
-            const exists = prevClients.find(c => c.id === savedClient.id);
-            if (exists) {
-                return prevClients.map(c => c.id === savedClient.id ? savedClient : c);
-            } else {
-                return [savedClient, ...prevClients];
-            }
-        });
-    };
-
+    useEffect(() => { fetchAllData(); }, []);
 
     const openLeadModal = (lead = {}) => {
         setSelectedItem(lead);
@@ -142,26 +85,21 @@ const SalesLeads = () => {
             fetch(`/BoothPortal/api/leads.php?id=${leadId}`, { method: 'DELETE' })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        setLeads(prev => prev.filter(l => l.id !== leadId));
-                    } else {
-                        throw new Error(data.error);
-                    }
+                    if (data.success) fetchAllData();
+                    else throw new Error(data.error);
                 })
                 .catch(err => alert(err.message));
         }
     };
     
+    // --- NEW: Function to delete clients ---
     const handleDeleteClient = (clientId) => {
         if (window.confirm('Are you sure you want to permanently delete this client? This action cannot be undone.')) {
             fetch(`/BoothPortal/api/clients.php?id=${clientId}`, { method: 'DELETE' })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        setClients(prev => prev.filter(c => c.id !== clientId));
-                    } else { 
-                        throw new Error(data.error);
-                    }
+                    if (data.success) fetchAllData();
+                    else throw new Error(data.error);
                 })
                 .catch(err => alert(err.message));
         }
@@ -172,11 +110,7 @@ const SalesLeads = () => {
         fetch('/BoothPortal/api/send_email.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                email: selectedItem.email, 
-                subject: emailContent.subject, 
-                body: emailContent.body 
-            })
+            body: JSON.stringify({ name: selectedItem.name, email: selectedItem.email, template: emailContent.template })
         })
         .then(res => res.json())
         .then(data => {
@@ -217,48 +151,7 @@ const SalesLeads = () => {
             {isBookingModalOpen && <BookingConversionModal lead={selectedItem} onClose={() => setIsBookingModalOpen(false)} onSave={fetchAllData} navigate={navigate} />}
             {isProfileModalOpen && <ClientProfileModal lead={selectedItem} onClose={() => setIsProfileModalOpen(false)} navigate={navigate} />}
             
-            {isEmailModalOpen && selectedItem && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-2xl">
-                        <h3 className="text-2xl font-bold mb-4">Send Email to {selectedItem.name}</h3>
-                        <form onSubmit={handleSendEmail}>
-                            <div className="mb-4">
-                                <label className="block font-semibold mb-2">Template</label>
-                                <select
-                                    value={emailContent.template}
-                                    onChange={(e) => setEmailContent(prev => ({ ...prev, template: e.target.value }))}
-                                    className="w-full border rounded p-2"
-                                >
-                                    <option>Initial Inquiry</option>
-                                    <option>Follow-up</option>
-                                    <option>Package Details</option>
-                                </select>
-                            </div>
-                            <div className="mb-4">
-                                <label className="block font-semibold mb-2">Subject</label>
-                                <input
-                                    type="text"
-                                    value={emailContent.subject}
-                                    onChange={(e) => setEmailContent(prev => ({ ...prev, subject: e.target.value }))}
-                                    className="w-full border rounded p-2"
-                                />
-                            </div>
-                            <div className="mb-6">
-                                <label className="block font-semibold mb-2">Body</label>
-                                <textarea
-                                    value={emailContent.body}
-                                    onChange={(e) => setEmailContent(prev => ({ ...prev, body: e.target.value }))}
-                                    className="w-full border rounded p-2 h-48"
-                                ></textarea>
-                            </div>
-                            <div className="flex justify-end space-x-4">
-                                <button type="button" onClick={() => setIsEmailModalOpen(false)} className="bg-gray-200 py-2 px-6 rounded-lg">Cancel</button>
-                                <button type="submit" className="bg-brand-green text-white font-bold py-2 px-6 rounded-lg">Send Email</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {isEmailModalOpen && selectedItem && ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">{/*...Email Modal...*/}</div> )}
         </section>
     );
 };
@@ -319,6 +212,7 @@ const ClientTable = ({ clients, onView, onEdit, onEmail, onDelete }) => (
                             <button onClick={() => onView(client)} className="text-green-600 font-semibold">View Profile</button>
                             <button onClick={() => onEdit(client)} className="text-blue-600 font-semibold">Edit</button>
                             <button onClick={() => onEmail(client)} className="text-gray-600 font-semibold">Email</button>
+                            {/* --- NEW: Delete button for clients --- */}
                             <button onClick={() => onDelete(client.id)} className="text-red-600 font-semibold">Delete</button>
                         </td>
                     </tr>
@@ -340,10 +234,7 @@ const LeadModal = ({ lead, onClose, onSave, onConvertToBooking }) => {
         const method = leadData.id ? 'PUT' : 'POST';
         fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(leadData) })
             .then(res => res.json()).then(data => {
-                if (data.success) { 
-                    onSave({ ...leadData, id: leadData.id || data.id }); 
-                    onClose(); 
-                } 
+                if (data.success) { onSave(); onClose(); } 
                 else { throw new Error(data.error); }
             }).catch(err => alert(err.message));
     };
@@ -399,10 +290,7 @@ const ClientModal = ({ client, onClose, onSave }) => {
         const method = clientData.id ? 'PUT' : 'POST';
         fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(clientData) })
         .then(res => res.json()).then(data => {
-            if (data.success) { 
-                onSave({ ...clientData, id: clientData.id || data.id }); 
-                onClose(); 
-            } 
+            if (data.success) { onSave(); onClose(); } 
             else { throw new Error(data.error); }
         }).catch(err => alert(err.message));
     };

@@ -1,23 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import Home from './pages/Home';
 import Bookings from './pages/Bookings';
 import SalesLeads from './pages/SalesLeads';
 import BudgetTracker from './pages/BudgetTracker';
+import TaskBoard from './pages/TaskBoard';
 import GoalTracker from './pages/GoalTracker';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
-import TaskBoard from './pages/TaskBoard';
 
 
 // Component to protect routes that require a user to be logged in.
 const PrivateRoute = ({ children }) => {
     const { user, isLoading } = useAuth();
     if (isLoading) {
-        return <div className="p-8 text-center">Loading...</div>;
+        return <div>Loading...</div>;
     }
     return user ? children : <Navigate to="/login" />;
 };
@@ -26,7 +27,7 @@ const PrivateRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
     const { user, isAdmin, isLoading } = useAuth();
     if (isLoading) {
-        return <div className="p-8 text-center">Loading...</div>;
+        return <div>Loading...</div>;
     }
     return user && isAdmin ? children : <Navigate to="/" />;
 };
@@ -40,8 +41,10 @@ function App() {
   };
 
   return (
-    <div className="text-gray-800 font-sans">
-      <Header onNavClick={handleNavClick} />
+    <div className="bg-white text-gray-800 font-sans">
+      <Header
+        onNavClick={handleNavClick}
+      />
       <main>
         <Routes>
           <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
@@ -49,8 +52,6 @@ function App() {
           <Route path="/sales-leads" element={<PrivateRoute><SalesLeads /></PrivateRoute>} />
           <Route path="/budget-tracker" element={<PrivateRoute><BudgetTracker /></PrivateRoute>} />
           <Route path="/goal-tracker" element={<PrivateRoute><GoalTracker /></PrivateRoute>} />
-          <Route path="/task-board" element={<PrivateRoute><TaskBoard /></PrivateRoute>} />
-          
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
@@ -62,8 +63,10 @@ function App() {
               </PrivateRoute>
             } 
           />
+          
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }
