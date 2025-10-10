@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'; // Import useEffect
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Header from './components/Header';
-import Footer from './components/Footer';
+
 import Home from './pages/Home';
 import Bookings from './pages/Bookings';
 import SalesLeads from './pages/SalesLeads';
@@ -87,7 +87,6 @@ function App() {
           
         </Routes>
       </main>
-      <Footer />
     </div>
   );
 }
